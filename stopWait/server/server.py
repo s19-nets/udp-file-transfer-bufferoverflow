@@ -6,6 +6,8 @@ import sys,time
 from socket import *
 from select import select
 
+file_cache = {"foo": "/files/foo.txt", "random":"/files/random.txt"}
+
 server_addr = ("", 50000)
 
 def usage(): 
@@ -29,13 +31,19 @@ def process_recvmsg(sock):
     msg, client_addr = sock.recvfrom(100)
     msg = msg.decode()
     if msg.find("GET") == 0: 
-        get_file = msg[4:]
-        send_file(sock,get_file,client_addr)
+        get_filename = msg[4:]
+        send_file(sock,get_filename,client_addr)
     elif msg.find("PUT") == 0: 
         save_file(sock)
+    else: 
+        print("Not a valid action. Please try again")
 
+def send_file(sock, file_name, client_addr):
+    ''' Check if file_name exist in our cache, get file path. send file '''
+    print("Todo")
 
-
+def save_file(sock): 
+    print("Todo")
 server_socket = socket(AF_INET, SOCK_DGRAM)
 server_socket.bind(server_addr)
 

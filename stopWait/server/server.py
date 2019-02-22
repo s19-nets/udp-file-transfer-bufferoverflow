@@ -34,7 +34,7 @@ def process_recvmsg(sock):
         PUT msg struct = 'PUT:filename' ?? 
         ACK msg struct = 'ACK:s<segment number>' '''
     global state
-
+    print("i am processing msg")
     msg, client_addr = sock.recvfrom(100)
     msg = msg.decode()
     if msg.find("GET") == 0: 
@@ -60,6 +60,7 @@ def process_recvmsg(sock):
 def process_get(sock, client_addr, msg): 
     ''' Check if our data has been prepared other wise go on 
         and send data to client '''
+    print("im at process GET")
     if msg.find("files/") == 0 and len(file_split) == 0: 
         segment = 1
         openfile = open(msg, "rb")
@@ -70,10 +71,10 @@ def process_get(sock, client_addr, msg):
             segment += 1 
         msg = 0
     next_segment = int(msg) + 1
-    msg = next_segment + ":" + file_split[next_segment]
-    sock.sendto(msg, client_addr)
+    msg = str(next_segment) + ":" + str(file_split[next_segment], "UTF-8")
+    sock.sendto(msg.encode(), client_addr)
     state = 'wait'
-    return time.time()
+    return (msg,time.time())
 
 
 def process_put(sock, client_addr, msg): 
@@ -82,13 +83,11 @@ def process_put(sock, client_addr, msg):
 def end(sock, msg): 
     pass
 
-def wait(sock, msg): 
-    pass
-
 server_socket = socket(AF_INET, SOCK_DGRAM)
 server_socket.bind(server_addr)
+server_socket.setblocking(False)
 
-read_set = set()
+read_set = set([server_socket])
 write_set = set()
 error_set = set()
 
@@ -98,16 +97,15 @@ state_machine = {}
 state_machine['process_get'] = process_get
 state_machine['process_put'] = process_put
 state_machine['end'] = end
-state_machine['wait'] = wait
-timeout = 5
 
-state = 'idle' 
+timeout = 5
 
 while True: 
     readready, writeready, error = select(read_set,write_set,error_set,timeout)
+    print("why am i not working")
     if not readready: 
-        if state == 'wait' and time.time() - sent_time >= 5: 
-
+        if state == 'wait' and time.time() - sent_time >= timeout: 
+            sock.sendto(sent_msg, client_addr)
     for sock in readready: 
         msg, client_addr = process_recvmsg(sock)
-        action_time = state_machine[state](sock,client_addr, msg)
+        sent_msg,action_time = state_machine[state](sock,client_addr, msg)

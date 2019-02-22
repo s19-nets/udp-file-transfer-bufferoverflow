@@ -6,9 +6,11 @@ import sys,time
 from socket import *
 from select import select
 
-file_cache = {"foo": "/files/foo.txt", "random":"/files/random.txt"}
+file_split = {}
 
 server_addr = ("", 50000)
+
+state = 'idle'
 
 def usage(): 
     print("Usage %s: [--serverport <port>]" % sys.argv[0])
@@ -27,23 +29,62 @@ except:
     usage()
 
 def process_recvmsg(sock): 
-    ''' Check wether if the client requested a 'GET' or 'PUT' '''
+    ''' Process messages:
+        GET msg struct = 'GET:filename'
+        PUT msg struct = 'PUT:filename' ?? 
+        ACK msg struct = 'ACK:s<segment number>' '''
+    global state
+
     msg, client_addr = sock.recvfrom(100)
     msg = msg.decode()
     if msg.find("GET") == 0: 
-        get_filename = msg[4:]
-        send_file(sock,get_filename,client_addr)
+        msg = "files/" + msg[4:]
+        if os.path.isfile(msg): 
+            state = 'process_get'
+        else: 
+            msg = "file not found"
+            state = 'end'
     elif msg.find("PUT") == 0: 
-        save_file(sock)
+        msg = "files/"+ msg[4:]
+        if os.path.isfile(msg): 
+            state = 'end'
+        else: 
+            state = 'process_put'
+    elif msg.find("ACK") == 0:
+        msg = msg[5:]
+        state = 'process_get'
     else: 
-        print("Not a valid action. Please try again")
+        print("wow")
+    return (msg, client_addr)
 
-def send_file(sock, file_name, client_addr):
-    ''' Check if file_name exist in our cache, get file path. send file '''
-    print("Todo")
+def process_get(sock, client_addr, msg): 
+    ''' Check if our data has been prepared other wise go on 
+        and send data to client '''
+    if msg.find("files/") == 0 and len(file_split) == 0: 
+        segment = 1
+        openfile = open(msg, "rb")
+        data = openfile.read(100)
+        while data: 
+            file_split[segment] = data
+            data = openfile.read(100)
+            segment += 1 
+        msg = 0
+    next_segment = int(msg) + 1
+    msg = next_segment + ":" + file_split[next_segment]
+    sock.sendto(msg, client_addr)
+    state = 'wait'
+    return time.time()
 
-def save_file(sock): 
-    print("Todo")
+
+def process_put(sock, client_addr, msg): 
+    pass
+
+def end(sock, msg): 
+    pass
+
+def wait(sock, msg): 
+    pass
+
 server_socket = socket(AF_INET, SOCK_DGRAM)
 server_socket.bind(server_addr)
 
@@ -51,10 +92,22 @@ read_set = set()
 write_set = set()
 error_set = set()
 
+
+state_machine = {}
+
+state_machine['process_get'] = process_get
+state_machine['process_put'] = process_put
+state_machine['end'] = end
+state_machine['wait'] = wait
 timeout = 5
+
+state = 'idle' 
 
 while True: 
     readready, writeready, error = select(read_set,write_set,error_set,timeout)
+    if not readready: 
+        if state == 'wait' and time.time() - sent_time >= 5: 
 
     for sock in readready: 
-        process_recvmsg(sock)
+        msg, client_addr = process_recvmsg(sock)
+        action_time = state_machine[state](sock,client_addr, msg)

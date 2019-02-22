@@ -4,25 +4,21 @@ import os,re
 import sys,time
 
 from socket import *
+from select import select 
 
 server_addr = ('localhost', 50000)
 
 client_socket = socket(AF_INET, SOCK_DGRAM)
 
-message = sys.stdin.readline()[:-1]
-client_socket.sendto(message.encode(), server_addr)
-msg, server_addr_port = client_socket.recvfrom(2048)
-msg, server_addr_port = client_socket.recvfrom(2048)
-print(msg)
-message = sys.stdin.readline()[:-1]
-client_socket.sendto(message.encode(), server_addr)
-msg, server_addr_port = client_socket.recvfrom(2048)
-print(msg)
-message = sys.stdin.readline()[:-1]
-client_socket.sendto(message.encode(), server_addr)
-msg, server_addr_port = client_socket.recvfrom(2048)
-print(msg)
-message = sys.stdin.readline()[:-1]
-client_socket.sendto(message.encode(), server_addr)
-msg, server_addr_port = client_socket.recvfrom(2048)
-print(msg)
+
+
+
+read_set = set([client_socket])
+write_set = set()
+error_set = set([client_socket])
+timeout = 5
+while True: 
+    readready, writeready, error = select(read_set, write_set, error_set, timeout)
+
+    if not readready: 
+

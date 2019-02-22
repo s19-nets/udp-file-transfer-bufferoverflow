@@ -46,6 +46,7 @@ def process_recvmsg(sock):
     elif msg.find("PUT") == 0: 
         msg = "files/"+ msg[4:]
         if os.path.isfile(msg): 
+            msg = "File exist already"
             state = 'end'
         else: 
             state = 'process_put'
@@ -70,10 +71,13 @@ def process_get(sock, client_addr, msg):
             segment += 1 
         msg = 0
     next_segment = int(msg) + 1
-    msg = str(next_segment) + ":" + str(file_split[next_segment], "UTF-8")
+    if next_segment in file_split: 
+        msg = str(next_segment) + ":" + str(file_split[next_segment], "UTF-8")
+    else: 
+        msg = str(-1) + ":" + " "
     sock.sendto(msg.encode(), client_addr)
     state = 'wait'
-    return (msg,time.time())
+    return msg
 
 
 def process_put(sock, client_addr, msg): 
@@ -88,7 +92,7 @@ server_socket.setblocking(False)
 
 read_set = set([server_socket])
 write_set = set()
-error_set = set()
+error_set = set([server_socket])
 
 
 state_machine = {}
@@ -108,4 +112,4 @@ while True:
             sock.sendto(sent_msg.encode(), client_addr)
     for sock in readready: 
         msg, client_addr = process_recvmsg(sock)
-        sent_msg,action_time = state_machine[state](sock,client_addr, msg)
+        sent_msg = state_machine[state](sock,client_addr, msg)

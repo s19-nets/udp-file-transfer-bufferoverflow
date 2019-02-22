@@ -79,7 +79,6 @@ def process_get(sock, client_addr, msg):
     state = 'wait'
     return msg
 
-
 def process_put(sock, client_addr, msg): 
     pass
 
@@ -96,12 +95,11 @@ error_set = set([server_socket])
 
 
 state_machine = {}
-
 state_machine['process_get'] = process_get
 state_machine['process_put'] = process_put
 state_machine['end'] = end
 
-timeout = 5
+timeout = 10
 
 while True: 
     readready, writeready, error = select(read_set,write_set,error_set,timeout)

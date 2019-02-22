@@ -17,8 +17,12 @@ read_set = set([client_socket])
 write_set = set()
 error_set = set([client_socket])
 timeout = 5
-while True: 
-    readready, writeready, error = select(read_set, write_set, error_set, timeout)
 
-    if not readready: 
+iput = sys.stdin.readline()[:-1]
+while iput !=  "q":
+    client_socket.sendto(iput.encode(), server_addr)
+    msg, server_addr_port = client_socket.recvfrom(102)
+    print(msg)
+    iput = sys.stdin.readline()[:-1]
+
 

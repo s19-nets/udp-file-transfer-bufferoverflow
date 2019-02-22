@@ -34,7 +34,6 @@ def process_recvmsg(sock):
         PUT msg struct = 'PUT:filename' ?? 
         ACK msg struct = 'ACK:s<segment number>' '''
     global state
-    print("i am processing msg")
     msg, client_addr = sock.recvfrom(100)
     msg = msg.decode()
     if msg.find("GET") == 0: 
@@ -60,7 +59,7 @@ def process_recvmsg(sock):
 def process_get(sock, client_addr, msg): 
     ''' Check if our data has been prepared other wise go on 
         and send data to client '''
-    print("im at process GET")
+    global state
     if msg.find("files/") == 0 and len(file_split) == 0: 
         segment = 1
         openfile = open(msg, "rb")
@@ -102,10 +101,11 @@ timeout = 5
 
 while True: 
     readready, writeready, error = select(read_set,write_set,error_set,timeout)
-    print("why am i not working")
-    if not readready: 
-        if state == 'wait' and time.time() - sent_time >= timeout: 
-            sock.sendto(sent_msg, client_addr)
+    if not readready and not writeready and not error:
+        print("timeout")
+        if state == 'wait': 
+            print("%s %s"%(sent_msg, client_addr))
+            sock.sendto(sent_msg.encode(), client_addr)
     for sock in readready: 
         msg, client_addr = process_recvmsg(sock)
         sent_msg,action_time = state_machine[state](sock,client_addr, msg)

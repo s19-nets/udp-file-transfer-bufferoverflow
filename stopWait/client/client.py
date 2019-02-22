@@ -12,4 +12,17 @@ client_socket = socket(AF_INET, SOCK_DGRAM)
 message = sys.stdin.readline()[:-1]
 client_socket.sendto(message.encode(), server_addr)
 msg, server_addr_port = client_socket.recvfrom(2048)
+msg, server_addr_port = client_socket.recvfrom(2048)
+print(msg)
+message = sys.stdin.readline()[:-1]
+client_socket.sendto(message.encode(), server_addr)
+msg, server_addr_port = client_socket.recvfrom(2048)
+print(msg)
+message = sys.stdin.readline()[:-1]
+client_socket.sendto(message.encode(), server_addr)
+msg, server_addr_port = client_socket.recvfrom(2048)
+print(msg)
+message = sys.stdin.readline()[:-1]
+client_socket.sendto(message.encode(), server_addr)
+msg, server_addr_port = client_socket.recvfrom(2048)
 print(msg)

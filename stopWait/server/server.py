@@ -30,17 +30,18 @@ except:
 
 def process_recvmsg(sock): 
     ''' Process messages:
-        GET msg struct = 'GET:filename'
+        GET msg struct = 'GET:filename.txt'
         PUT msg struct = 'PUT:filename' ?? 
         ACK msg struct = 'ACK:s<segment number>' '''
     global state
     msg, client_addr = sock.recvfrom(100)
     msg = msg.decode()
+    print("recived: %s"%msg)
     if msg.find("GET") == 0: 
         msg = "files/" + msg[4:]
         if os.path.isfile(msg): 
             state = 'process_get'
-        else: 
+        else:
             msg = "file not found"
             state = 'end'
     elif msg.find("PUT") == 0: 
@@ -53,8 +54,10 @@ def process_recvmsg(sock):
     elif msg.find("ACK") == 0:
         msg = msg[5:]
         state = 'process_get'
+    elif msg == "Thank you, Goodbye": 
+        state = 'idle'
     else: 
-        print("wow")
+        print("Something wrong happened")
     return (msg, client_addr)
 
 def process_get(sock, client_addr, msg): 
@@ -75,6 +78,7 @@ def process_get(sock, client_addr, msg):
         msg = str(next_segment) + ":" + str(file_split[next_segment], "UTF-8")
     else: 
         msg = str(-1) + ":" + " "
+    print("Send: %s"%msg)
     sock.sendto(msg.encode(), client_addr)
     state = 'wait'
     return msg
@@ -82,6 +86,7 @@ def process_get(sock, client_addr, msg):
 def process_put(sock, client_addr, msg): 
     pass
 
+# Log that something went wrong
 def end(sock, msg): 
     pass
 
@@ -97,17 +102,22 @@ error_set = set([server_socket])
 state_machine = {}
 state_machine['process_get'] = process_get
 state_machine['process_put'] = process_put
-state_machine['end'] = end
 
 timeout = 10
 
+counter = 0
 while True: 
     readready, writeready, error = select(read_set,write_set,error_set,timeout)
     if not readready and not writeready and not error:
         print("timeout")
+        counter += 1
+        if state == 'idle': 
+            counter = 0
         if state == 'wait': 
-            print("%s %s"%(sent_msg, client_addr))
             sock.sendto(sent_msg.encode(), client_addr)
+        if counter == 10: 
+            print("Connection lost")
     for sock in readready: 
         msg, client_addr = process_recvmsg(sock)
-        sent_msg = state_machine[state](sock,client_addr, msg)
+        if state == 'idle': 
+            sent_msg = state_machine[state](sock,client_addr, msg)

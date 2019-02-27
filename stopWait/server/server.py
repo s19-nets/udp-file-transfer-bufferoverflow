@@ -119,4 +119,5 @@ while True:
             print("Connection lost")
     for sock in readready: 
         msg, client_addr = process_recvmsg(sock) 
-        sent_msg = state_machine[state](sock,client_addr, msg)
+        if state != 'idle':
+            sent_msg = state_machine[state](sock,client_addr, msg)

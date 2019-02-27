@@ -18,7 +18,6 @@ def process_recvmsg(sock):
         if msg.find("ACK") == -1:
             process_get(sock, msg, sender_addr)
 
-
 def process_get(sock, msg, sender_addr): 
     global state, requestfile
     openfile = open("files/"+requestfile, "a")
@@ -31,7 +30,7 @@ def process_get(sock, msg, sender_addr):
     else: 
         msgto_send = "Thank you, Goodbye"
         sock.sendto(msgto_send.encode(), sender_addr)
-        sock.close()
+        state = 'end'
     return int(msg_split[0])
     
 
@@ -55,7 +54,11 @@ while True:
             msgto_send = "GET:" + requestfile
             print("Send: %s"%msgto_send)
             client_socket.sendto(msgto_send.encode(), server_addr)
+            getsent = True
             state = 'wait'
+        if state == 'end':
+            break
     for sock in readready: 
         current_segment = process_recvmsg(sock)
 
+client_socket.close()

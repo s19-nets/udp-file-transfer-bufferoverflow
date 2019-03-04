@@ -2,6 +2,7 @@
 
 import os,re
 import sys,time 
+from serverstatemachine import ServerStateMachine
 
 from socket import *
 from select import select
@@ -129,9 +130,12 @@ read_set = set([server_socket])
 write_set = set()
 error_set = set([server_socket])
 
-state_machine = {}
-state_machine['process_get'] = process_get
-state_machine['process_put'] = process_put
+#state_machine = {}
+#state_machine['process_get'] = process_get
+#state_machine['process_put'] = process_put
+
+statemachine = ServerStateMachine()
+statehandler = {}
 
 timeout = 10
 
@@ -140,14 +144,17 @@ while True:
     readready, writeready, error = select(read_set,write_set,error_set,timeout)
     if not readready and not writeready and not error: 
         print("timeout")
-        counter += 1
-        if state == 'idle': 
-            counter = 0
-        if state == 'wait': 
-            sock.sendto(sent_msg.encode(), client)
-        if counter == 10: 
-            print("Connection lost")
+        statemachine.on_event({'event':'timeout', 'msg':None})
+        #counter += 1
+        #if state == 'idle': 
+            #counter = 0
+        #if state == 'wait': 
+            #sock.sendto(sent_msg.encode(), client)
+        #if counter == 10: 
+            #print("Connection lost")
     for sock in readready: 
-        msg, client= process_recvmsg(sock) 
-        if state != 'idle': 
-            sent_msg = state_machine[state](sock,client, msg)
+        msg, client = sock.recvfrom(100)
+        statemachine.on_event({'event':'msg_recv', 'msg':msg[:3]})
+        #msg, client= process_recvmsg(sock) 
+        #if state != 'idle': 
+            #sent_msg = state_machine[state](sock,client, msg)

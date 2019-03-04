@@ -69,9 +69,12 @@ def process_get(sock, client_addr, msg):
     global state,filehelper
     print("%s %d"%(msg, len(file_split)))
     if msg.find("files/") == 0 and len(file_split) == 0: 
-        segment = 1
-        openfile = open(
-    next_segment = int(msg) + 1
+        # set filename and split the file
+        filehelper.setfile(msg)
+        # set msg to 0 so that code can continue
+        msg = 0
+    segment = int(msg) + 1
+    segment = filehelper.getsegment(segment)
     if next_segment in file_split: 
         msg = str(next_segment) + ":" + str(file_split[next_segment], "UTF-8")
     else: 

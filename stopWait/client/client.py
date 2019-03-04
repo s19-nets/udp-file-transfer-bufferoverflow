@@ -16,13 +16,16 @@ def process_recvmsg(sock):
     print("recived: %s"%msg)
     if state == 'wait': 
         if msg.find("ACK") == -1:
-            process_get(sock, msg, sender_addr)
+           return process_get(sock, msg, sender_addr)
 
 def process_get(sock, msg, sender_addr): 
-    global state, requestfile
+    global state, requestfile, last_ackmsg
     openfile = open("files/"+requestfile, "a")
     msg_split = msg.split(":")
     openfile.write(msg_split[1])
+    # if we have already ack the current msg then ignore it
+    if last_ackmsg == int(msg_split[0]): 
+        return 
     if msg_split[0] != "-1":
         msgto_send = "ACK:s"+msg_split[0]
         sock.sendto(msgto_send.encode(),sender_addr)
@@ -31,7 +34,7 @@ def process_get(sock, msg, sender_addr):
         msgto_send = "Thank you, Goodbye"
         sock.sendto(msgto_send.encode(), sender_addr)
         state = 'end'
-    return int(msg_split[0])
+    last_ackmsg = int(msg_split[0])
     
 
 client_socket = socket(AF_INET, SOCK_DGRAM)
@@ -44,6 +47,7 @@ timeout = 5
 state = 'idle'
 
 requestfile = "foo.txt"
+last_ackmsg = 0
 getsent = False
 while True: 
     readready, writeready, error = select(read_set, write_set, error_set, timeout)
@@ -59,6 +63,6 @@ while True:
         if state == 'end':
             break
     for sock in readready: 
-        current_segment = process_recvmsg(sock)
+        process_recvmsg(sock)
 
 client_socket.close()

@@ -1,14 +1,15 @@
 #! /usr/bin/env python3
 
 import os,re
-import sys,time
+import sys,time 
 
 from socket import *
 from select import select
 
+
 file_split = {}
 
-server_addr = ("", 50000)
+server_addr = ("", 50001)
 
 state = 'idle'
 
@@ -54,8 +55,10 @@ def process_recvmsg(sock):
     elif msg.find("ACK") == 0:
         msg = msg[5:]
         state = 'process_get'
-    elif msg == "Thank you, Goodbye": 
+    elif msg.find("Thank") == 0: 
         state = 'idle'
+        # reset file_split since we have completed this request
+        file_split = {}
     else: 
         print("Something wrong happened")
     return (msg, client_addr)
@@ -63,16 +66,11 @@ def process_recvmsg(sock):
 def process_get(sock, client_addr, msg): 
     ''' Check if our data has been prepared other wise go on 
         and send data to client '''
-    global state
+    global state,filehelper
+    print("%s %d"%(msg, len(file_split)))
     if msg.find("files/") == 0 and len(file_split) == 0: 
         segment = 1
-        openfile = open(msg, "rb")
-        data = openfile.read(100)
-        while data: 
-            file_split[segment] = data
-            data = openfile.read(100)
-            segment += 1 
-        msg = 0
+        openfile = open(
     next_segment = int(msg) + 1
     if next_segment in file_split: 
         msg = str(next_segment) + ":" + str(file_split[next_segment], "UTF-8")
@@ -84,11 +82,39 @@ def process_get(sock, client_addr, msg):
     return msg
 
 def process_put(sock, client_addr, msg): 
-    pass
+    global state
+    if msg.find("files/") == 0 and not os.path.isfile(msg): 
+        # first create our file
+        open(msg, "w+")
+
 
 # Log that something went wrong
 def end(sock, msg): 
     pass
+
+
+class FileHelper(object):
+    def __init__(self):
+        self.filename = None
+        self.splitedfile = {}
+        
+    def setfile(self,filename):
+        self.filename
+        splitfile()
+
+    def splitfile(self): 
+        f = open(self.filename, "rb")
+        index = 1
+        data = f.read(100)
+        while data: 
+            self.splitedfile[index] = data
+            data = f.read(100)
+            index += 1
+
+    def getsegment(self, segnum): 
+        return self.splitedfile[segnum] if segnum in splitedfile else -1
+
+filehelper = FileHelper()
 
 server_socket = socket(AF_INET, SOCK_DGRAM)
 server_socket.bind(server_addr)
@@ -97,7 +123,6 @@ server_socket.setblocking(False)
 read_set = set([server_socket])
 write_set = set()
 error_set = set([server_socket])
-
 
 state_machine = {}
 state_machine['process_get'] = process_get
@@ -108,8 +133,8 @@ timeout = 10
 counter = 0
 while True: 
     readready, writeready, error = select(read_set,write_set,error_set,timeout)
-    if not readready and not writeready and not error:
-        print("timeout")
+    if not readready and not writeready and not error: 
+       print("timeout")
         counter += 1
         if state == 'idle': 
             counter = 0
@@ -119,5 +144,4 @@ while True:
             print("Connection lost")
     for sock in readready: 
         msg, client_addr = process_recvmsg(sock) 
-        if state != 'idle':
-            sent_msg = state_machine[state](sock,client_addr, msg)
+        r = statemachine[state](msg,client)

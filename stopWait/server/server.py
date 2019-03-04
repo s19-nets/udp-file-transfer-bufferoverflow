@@ -73,10 +73,10 @@ def process_get(sock, client_addr, msg):
         filehelper.setfile(msg)
         # set msg to 0 so that code can continue
         msg = 0
-    segment = int(msg) + 1
+    segnum = segment = int(msg) + 1
     segment = filehelper.getsegment(segment)
-    if next_segment in file_split: 
-        msg = str(next_segment) + ":" + str(file_split[next_segment], "UTF-8")
+    if segment != -1: 
+        msg = str(segnum) + ":" + segment
     else: 
         msg = str(-1) + ":" + " "
     print("Send: %s"%msg)
@@ -137,7 +137,7 @@ counter = 0
 while True: 
     readready, writeready, error = select(read_set,write_set,error_set,timeout)
     if not readready and not writeready and not error: 
-       print("timeout")
+        print("timeout")
         counter += 1
         if state == 'idle': 
             counter = 0

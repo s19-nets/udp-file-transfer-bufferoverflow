@@ -6,9 +6,6 @@ import sys,time
 from socket import *
 from select import select
 
-
-file_split = {}
-
 #server_addr = ("", 50001) # uncomment this line when using proxy
 server_addr = ("", 50000)
 

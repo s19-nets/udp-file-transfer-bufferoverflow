@@ -9,7 +9,8 @@ from select import select
 
 file_split = {}
 
-server_addr = ("", 50001)
+#server_addr = ("", 50001) # uncomment this line when using proxy
+server_addr = ("", 50000)
 
 state = 'idle'
 
@@ -71,12 +72,14 @@ def process_get(sock, client_addr, msg):
     if msg.find("files/") == 0 and len(file_split) == 0: 
         # set filename and split the file
         filehelper.setfile(msg)
+        filehelper.splitfile()
         # set msg to 0 so that code can continue
         msg = 0
     segnum = segment = int(msg) + 1
     segment = filehelper.getsegment(segment)
+    print(segment)
     if segment != -1: 
-        msg = str(segnum) + ":" + segment
+        msg = str(segnum) + ":" + segment.decode()
     else: 
         msg = str(-1) + ":" + " "
     print("Send: %s"%msg)
@@ -102,8 +105,7 @@ class FileHelper(object):
         self.splitedfile = {}
         
     def setfile(self,filename):
-        self.filename
-        splitfile()
+        self.filename = filename
 
     def splitfile(self): 
         f = open(self.filename, "rb")
@@ -115,7 +117,7 @@ class FileHelper(object):
             index += 1
 
     def getsegment(self, segnum): 
-        return self.splitedfile[segnum] if segnum in splitedfile else -1
+        return self.splitedfile[segnum] if segnum in self.splitedfile else -1
 
 filehelper = FileHelper()
 
@@ -142,9 +144,10 @@ while True:
         if state == 'idle': 
             counter = 0
         if state == 'wait': 
-            sock.sendto(sent_msg.encode(), client_addr)
+            sock.sendto(sent_msg.encode(), client)
         if counter == 10: 
             print("Connection lost")
     for sock in readready: 
-        msg, client_addr = process_recvmsg(sock) 
-        r = statemachine[state](msg,client)
+        msg, client= process_recvmsg(sock) 
+        if state != 'idle': 
+            sent_msg = state_machine[state](sock,client, msg)

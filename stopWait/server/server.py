@@ -33,7 +33,7 @@ def get_handler(sock, client_addr, msg):
         and send data to client '''
     global statemachine,filehelper
     #print("%s %d"%(msg, len(file_split)))
-    if msg.find("GET") == 0: 
+    if msg[:3] == "GET": 
         # set filename and split the file
         filename = "files/" + msg[4:]
         filehelper.setfile(filename)
@@ -42,12 +42,13 @@ def get_handler(sock, client_addr, msg):
         msg = 0
     else: 
         msg = msg[5:]
-    segnum = segment = int(msg) + 1
-    segment = filehelper.getsegment(segment)
+    segnum = int(msg) + 1
+    segment = filehelper.getsegment(segnum)
     print(segment)
     if segment != -1: 
         msg = str(segnum) + ":" + segment.decode()
     else: 
+        # probably change the file end message to "END:<empty>"
         msg = str(-1) + ":" + " "
     print("Send: %s"%msg)
     sock.sendto(msg.encode(), client_addr)
@@ -101,6 +102,7 @@ error_set = set([server_socket])
 #state_machine['process_put'] = process_put
 
 statemachine = ServerStateMachine()
+''' TODO: handler funcs for all other states '''
 statehandler = {}
 statehandler['GetState'] = get_handler 
 
@@ -112,6 +114,7 @@ while True:
     if not readready and not writeready and not error: 
         print("timeout")
         statemachine.on_event({'event':'timeout', 'msg':None})
+        statehandler[statemachine.state.__str__()](sock,client,msg)
         #counter += 1
         #if state == 'idle': 
             #counter = 0

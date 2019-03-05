@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
-
-from state import State
+from sstate import State
 
 class IdleState(State): 
     def on_event(self, event):
@@ -16,6 +15,8 @@ class WaitState(State):
         if event['event'] == 'msg_recv': 
             if event['msg'] == "ACK": 
                 return GetState()
+            elif event['msg'].find("BYE")==0: 
+                return IdleState()
             else: 
                 return PutState()
         return self

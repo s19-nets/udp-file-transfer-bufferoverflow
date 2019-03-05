@@ -1,5 +1,4 @@
 #! /usr/bin/env python3
-
 class State(object):
     def __init__(self): 
         print("Processing current state: %s" % str(self))

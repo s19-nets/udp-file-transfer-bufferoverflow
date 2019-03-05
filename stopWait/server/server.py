@@ -1,8 +1,8 @@
 #! /usr/bin/env python3
+from serverstatemachine import ServerStateMachine
 
 import os,re
 import sys,time 
-from serverstatemachine import ServerStateMachine
 
 from socket import *
 from select import select
@@ -28,51 +28,20 @@ try:
 except: 
     usage()
 
-def process_recvmsg(sock): 
-    ''' Process messages:
-        GET msg struct = 'GET:filename.txt'
-        PUT msg struct = 'PUT:filename' ?? 
-        ACK msg struct = 'ACK:s<segment number>' '''
-    global state
-    msg, client_addr = sock.recvfrom(100)
-    msg = msg.decode()
-    print("recived: %s"%msg)
-    if msg.find("GET") == 0: 
-        msg = "files/" + msg[4:]
-        if os.path.isfile(msg): 
-            state = 'process_get'
-        else:
-            msg = "file not found"
-            state = 'end'
-    elif msg.find("PUT") == 0: 
-        msg = "files/"+ msg[4:]
-        if os.path.isfile(msg): 
-            msg = "File exist already"
-            state = 'end'
-        else: 
-            state = 'process_put'
-    elif msg.find("ACK") == 0:
-        msg = msg[5:]
-        state = 'process_get'
-    elif msg.find("Thank") == 0: 
-        state = 'idle'
-        # reset file_split since we have completed this request
-        file_split = {}
-    else: 
-        print("Something wrong happened")
-    return (msg, client_addr)
-
-def process_get(sock, client_addr, msg): 
+def get_handler(sock, client_addr, msg): 
     ''' Check if our data has been prepared other wise go on 
         and send data to client '''
-    global state,filehelper
-    print("%s %d"%(msg, len(file_split)))
-    if msg.find("files/") == 0 and len(file_split) == 0: 
+    global statemachine,filehelper
+    #print("%s %d"%(msg, len(file_split)))
+    if msg.find("GET") == 0: 
         # set filename and split the file
-        filehelper.setfile(msg)
+        filename = "files/" + msg[4:]
+        filehelper.setfile(filename)
         filehelper.splitfile()
         # set msg to 0 so that code can continue
         msg = 0
+    else: 
+        msg = msg[5:]
     segnum = segment = int(msg) + 1
     segment = filehelper.getsegment(segment)
     print(segment)
@@ -82,10 +51,10 @@ def process_get(sock, client_addr, msg):
         msg = str(-1) + ":" + " "
     print("Send: %s"%msg)
     sock.sendto(msg.encode(), client_addr)
-    state = 'wait'
+    statemachine.on_event({'event':'msg_sent','msg':msg})
     return msg
 
-def process_put(sock, client_addr, msg): 
+def put_handler(sock, client_addr, msg): 
     global state
     if msg.find("files/") == 0 and not os.path.isfile(msg): 
         # first create our file
@@ -133,6 +102,7 @@ error_set = set([server_socket])
 
 statemachine = ServerStateMachine()
 statehandler = {}
+statehandler['GetState'] = get_handler 
 
 timeout = 10
 
@@ -151,7 +121,9 @@ while True:
             #print("Connection lost")
     for sock in readready: 
         msg, client = sock.recvfrom(100)
+        msg = msg.decode()
         statemachine.on_event({'event':'msg_recv', 'msg':msg[:3]})
+        statehandler[statemachine.state.__str__()](sock,client,msg)
         #msg, client= process_recvmsg(sock) 
         #if state != 'idle': 
             #sent_msg = state_machine[state](sock,client, msg)

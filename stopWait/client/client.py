@@ -31,7 +31,7 @@ def process_get(sock, msg, sender_addr):
         sock.sendto(msgto_send.encode(),sender_addr)
         state = 'wait'
     else: 
-        msgto_send = "Thank you, Goodbye"
+        msgto_send = "BYE:Thank you"
         sock.sendto(msgto_send.encode(), sender_addr)
         state = 'end'
     last_ackmsg = int(msg_split[0])

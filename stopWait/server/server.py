@@ -7,7 +7,8 @@ import sys,time
 from socket import *
 from select import select
 
-#server_addr = ("", 50001) # uncomment this line when using proxy
+#uncomment the line below if you want to use the proxy
+#server_addr = ("", 50001) 
 server_addr = ("", 50000)
 
 def usage(): 
@@ -49,7 +50,7 @@ def get_handler(sock, client, msg):
     ''' Check if our data has been prepared other wise go on 
         and send data to client '''
     global statemachine,filehelper
-    #print("%s %d"%(msg, len(file_split)))
+
     if msg[:3] == "GET": 
         # set filename and split the file
         filename = "files/" + msg[4:]
@@ -58,14 +59,15 @@ def get_handler(sock, client, msg):
         # set msg to 0 so that code can continue
         msg = 0
     else: 
+        # set up message to just contain the segment number that was ACK
         msg = msg[5:]
+
     segnum = int(msg) + 1
     segment = filehelper.getsegment(segnum)
-    print(segment)
     if segment != -1: 
         segment = str(segnum) + ":" + segment.decode()
     else: 
-        # probably change the file end message to "END:<empty>"
+        # TODO: change the file end message to "END:<empty>"
         segment = str(-1) + ":" + " "
     print("Send: %s"%segment)
     sock.sendto(segment.encode(), client)
@@ -112,7 +114,7 @@ write_set = set()
 error_set = set([server_socket])
 
 statemachine = ServerStateMachine()
-''' TODO: handler funcs for all other states '''
+''' TODO: put state handler '''
 statehandler = {}
 statehandler['IdleState'] = idle_handler
 statehandler['WaitState'] = wait_handler
@@ -129,13 +131,6 @@ while True:
         print("timeout")
         statemachine.on_event({'event':'timeout', 'msg':None})
         lastclient,sentmsg=statehandler[statemachine.state.__str__()](server_socket,lastclient,sentmsg)
-        #counter += 1
-        #if state == 'idle': 
-            #counter = 0
-        #if state == 'wait': 
-            #sock.sendto(sent_msg.encode(), client)
-        #if counter == 10: 
-            #print("Connection lost")
     for sock in readready: 
         msg, client = sock.recvfrom(100)
         msg = msg.decode()

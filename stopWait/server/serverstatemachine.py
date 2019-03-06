@@ -10,5 +10,7 @@ class ServerStateMachine(object):
         self.state = self.state.on_event(event)
 
     ''' TODO: create a function to get the current 
-        state of the server state machine. '''
-
+        state of the server state machine. 
+        Sanchez'''
+    def getCurrentState(self):
+        return self.state

@@ -15,7 +15,7 @@ class WaitState(State):
         if event['event'] == 'msg_recv': 
             if event['msg'] == "ACK": 
                 return GetState()
-            elif event['msg'].find("BYE")==0: 
+            elif event['msg']== "BYE": 
                 return IdleState()
             else: 
                 return PutState()

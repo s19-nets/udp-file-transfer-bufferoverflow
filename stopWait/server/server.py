@@ -67,8 +67,8 @@ def get_handler(sock, client, msg):
     if segment != -1: 
         segment = str(segnum) + ":" + segment.decode()
     else: 
-        # TODO: change the file end message to "END:<empty>"
-        segment = str(-1) + ":" + " "
+        # TODO: change the file end message to "END:<empty>"Sanchez
+        segment = str('END') + ":" + " "
     print("Send: %s"%segment)
     sock.sendto(segment.encode(), client)
     statemachine.on_event({'event':'msg_sent','msg':msg})

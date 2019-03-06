@@ -15,26 +15,25 @@ def process_recvmsg(sock):
     msg = msg.decode()
     print("recived: %s"%msg)
     if state == 'wait': 
-        if msg.find("ACK") == 'END':
+        if msg[:3] != "ACK":
            return process_get(sock, msg, sender_addr)
 
 def process_get(sock, msg, sender_addr): 
     global state, requestfile, last_ackmsg
     openfile = open("files/"+requestfile, "a")
     msg_split = msg.split(":")
-    openfile.write(msg_split[1])
-    # if we have already ack the current msg then ignore it
-    if last_ackmsg == int(msg_split[0]): 
-        return 
+    openfile.write(msg_split[1]) 
     if msg_split[0] != "END":
+        if last_ackmsg == int(msg_split[0]):
+            return
         msgto_send = "ACK:s"+msg_split[0]
         sock.sendto(msgto_send.encode(),sender_addr)
+        last_ackmsg = int(msg_split[0])
         state = 'wait'
     else: 
         msgto_send = "BYE:Thank you"
         sock.sendto(msgto_send.encode(), sender_addr)
         state = 'end'
-    last_ackmsg = int(msg_split[0])
     
 
 client_socket = socket(AF_INET, SOCK_DGRAM)

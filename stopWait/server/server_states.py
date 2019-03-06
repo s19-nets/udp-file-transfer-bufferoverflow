@@ -19,7 +19,10 @@ class WaitState(State):
                 return IdleState()
             else: 
                 return PutState()
-        return self
+        elif event['event'] == 'err_to':
+            return IdleState()
+        else: 
+            return self
 
 class GetState(State): 
     def on_event(self, event):

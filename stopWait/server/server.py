@@ -26,7 +26,26 @@ try:
 except: 
     usage()
 
-def get_handler(sock, client_addr, msg): 
+def idle_handler(sock, client, msg): 
+    ''' Rest our previous client variables and our tires '''
+    global tries
+    tries = 0 
+    print("Waiting for a client to connect...")
+    return (None,)*2
+
+def wait_handler(sock, client, msg):
+    global tries
+    tries += 1
+    if tries == 5: 
+        statemachine.on_event({'event':'err_to','msg':None})
+    elif client != None and msg != None: 
+        print("Attempt %d: %s"%(tries,msg))
+        sock.sendto(msg.encode(), client)
+    else: 
+        print("Waiting for message from client")
+    return (client,msg)
+
+def get_handler(sock, client, msg): 
     ''' Check if our data has been prepared other wise go on 
         and send data to client '''
     global statemachine,filehelper
@@ -49,20 +68,17 @@ def get_handler(sock, client_addr, msg):
         # probably change the file end message to "END:<empty>"
         segment = str(-1) + ":" + " "
     print("Send: %s"%segment)
-    sock.sendto(segment.encode(), client_addr)
+    sock.sendto(segment.encode(), client)
     statemachine.on_event({'event':'msg_sent','msg':msg})
-    return segment
+    return (client,segment)
 
+# TODO: put request needs to be handled 
 def put_handler(sock, client_addr, msg): 
-    global state
-    if msg.find("files/") == 0 and not os.path.isfile(msg): 
-        # first create our file
-        open(msg, "w+")
-
-
-# Log that something went wrong
-def end(sock, msg): 
     pass
+
+
+# TODO: add a state where if an error happens that state machine 
+#       cant handle, the error state will log that error
 
 
 class FileHelper(object):
@@ -98,17 +114,21 @@ error_set = set([server_socket])
 statemachine = ServerStateMachine()
 ''' TODO: handler funcs for all other states '''
 statehandler = {}
+statehandler['IdleState'] = idle_handler
+statehandler['WaitState'] = wait_handler
 statehandler['GetState'] = get_handler 
 
-timeout = 10
+sentmsg = None
+lastclient = None
 
-counter = 0
+timeout = 10
+tries = 0
 while True: 
     readready, writeready, error = select(read_set,write_set,error_set,timeout)
     if not readready and not writeready and not error: 
         print("timeout")
         statemachine.on_event({'event':'timeout', 'msg':None})
-        statehandler[statemachine.state.__str__()](sock,client,msg)
+        lastclient,sentmsg=statehandler[statemachine.state.__str__()](server_socket,lastclient,sentmsg)
         #counter += 1
         #if state == 'idle': 
             #counter = 0
@@ -120,7 +140,4 @@ while True:
         msg, client = sock.recvfrom(100)
         msg = msg.decode()
         statemachine.on_event({'event':'msg_recv', 'msg':msg[:3]})
-        statehandler[statemachine.state.__str__()](sock,client,msg)
-        #msg, client= process_recvmsg(sock) 
-        #if state != 'idle': 
-            #sent_msg = state_machine[state](sock,client, msg)
+        lastclient,sentmsg = statehandler[statemachine.state.__str__()](sock,client,msg)

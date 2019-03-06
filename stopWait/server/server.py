@@ -10,8 +10,6 @@ from select import select
 #server_addr = ("", 50001) # uncomment this line when using proxy
 server_addr = ("", 50000)
 
-state = 'idle'
-
 def usage(): 
     print("Usage %s: [--serverport <port>]" % sys.argv[0])
     sys.exit(1)
@@ -46,14 +44,14 @@ def get_handler(sock, client_addr, msg):
     segment = filehelper.getsegment(segnum)
     print(segment)
     if segment != -1: 
-        msg = str(segnum) + ":" + segment.decode()
+        segment = str(segnum) + ":" + segment.decode()
     else: 
         # probably change the file end message to "END:<empty>"
-        msg = str(-1) + ":" + " "
-    print("Send: %s"%msg)
-    sock.sendto(msg.encode(), client_addr)
+        segment = str(-1) + ":" + " "
+    print("Send: %s"%segment)
+    sock.sendto(segment.encode(), client_addr)
     statemachine.on_event({'event':'msg_sent','msg':msg})
-    return msg
+    return segment
 
 def put_handler(sock, client_addr, msg): 
     global state
@@ -96,10 +94,6 @@ server_socket.setblocking(False)
 read_set = set([server_socket])
 write_set = set()
 error_set = set([server_socket])
-
-#state_machine = {}
-#state_machine['process_get'] = process_get
-#state_machine['process_put'] = process_put
 
 statemachine = ServerStateMachine()
 ''' TODO: handler funcs for all other states '''

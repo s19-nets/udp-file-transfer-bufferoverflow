@@ -14,3 +14,19 @@ Simple server that sends files to client and saves files from the client
 ```
 python3 server.py
 ```
+The servers happy state is its "idle."
+The server will run for ever waiting for clients to connect. 
+The server updates its state based on events happening. 
+
+#### States
+- Idle
+- Wait
+- Get
+- Put
+- TODO: Error
+
+#### Events
+- Message recived 
+- Message sent 
+- Timeout 
+- Resend message times limit reached

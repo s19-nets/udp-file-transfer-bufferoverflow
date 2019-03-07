@@ -125,9 +125,9 @@ class FileHelper(object):
     def writetofile(self, data):
         f = open(self.filename, "a")
         f.write(data)
-        f.clost()
+        f.close()
 
-    def reset(): 
+    def reset(self): 
         self.filename = None
         self.splitedfile = {}
 
@@ -160,6 +160,7 @@ while True:
         statemachine.on_event({'event':'timeout', 'msg':None})
         lastclient,sentmsg=statehandler[statemachine.getCurrentState()](server_socket,lastclient,sentmsg)
     for sock in readready: 
+        tries = 0
         msg, client = sock.recvfrom(100)
         msg = msg.decode()
         statemachine.on_event({'event':'msg_recv', 'msg':msg[:3]})

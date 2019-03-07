@@ -2,10 +2,10 @@
 ''' This class should also be techically the same as serverstatemachine'''
 class ClientStateMachine(object): 
     def __init__(self): 
-        #TODO: set the starting state of the client
+        self.state = IdleState()
 
     def on_event(self, event):
-        #TODO: foward on the event to our current state
+        self.state = self.state.on_event(event)
 
     def getCurrentState(self):
-        #TODO: return the current state
+        return str(self.state)

@@ -13,4 +13,4 @@ class ServerStateMachine(object):
         state of the server state machine. 
         Sanchez'''
     def getCurrentState(self):
-        return self.state
+        return str(self.state)

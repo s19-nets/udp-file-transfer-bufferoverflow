@@ -29,8 +29,9 @@ except:
 
 def idle_handler(sock, client, msg): 
     ''' Rest our previous client variables and our tires '''
-    global tries
+    global tries,filehelper
     tries = 0 
+    filehelper.reset()
     print("Waiting for a client to connect...")
     return (None,)*2
 
@@ -75,8 +76,32 @@ def get_handler(sock, client, msg):
     return (client,segment)
 
 # TODO: put request needs to be handled 
-def put_handler(sock, client_addr, msg): 
-    pass
+def put_handler(sock, client, msg): 
+    global statemachine, filehelper
+    
+    if msg[:3] == "PUT": 
+        # TODO: check if file exists
+        fname = "files/" + msg[4:]
+        if filehelper.fileexists(fname): 
+            print("file already exists")
+        else: 
+            # just set the file name of our file helper
+            # our function writetofile takes care of creating the file
+            filehelper.setfile(fname)
+            sendmsg = "RDY:"+fname
+            sock.sendto(sendmsg.encode(), client)
+            statemachine.on_event({'event':'msg_sent','msg':sendmsg})
+            return (client,sendmsg)
+        segnum = int(msg[1:2]) # struct of our segment msg = s<segnum>:<payload>
+        payload = msg[3:]
+        filehelper.writetofile(payload)
+        sendmsg = "ACK:s"+segnum
+        sock.sendto(sendmsg.encode(),client)
+        statemachine.on_event({'event':'msg_sent','msg':sendmsg})
+        return (client,sendmsg)
+
+        
+
 
 
 # TODO: add a state where if an error happens that state machine 
@@ -103,6 +128,20 @@ class FileHelper(object):
     def getsegment(self, segnum): 
         return self.splitedfile[segnum] if segnum in self.splitedfile else -1
 
+    def fileexists(self, filename): 
+        return os.path.isfile(filename)
+
+    def writetofile(self, data):
+        f = open(self.filename, "a")
+        f.write(data)
+        f.clost()
+
+    def reset(): 
+        self.filename = None
+        self.splitedfile = {}
+
+
+
 filehelper = FileHelper()
 
 server_socket = socket(AF_INET, SOCK_DGRAM)
@@ -119,6 +158,7 @@ statehandler = {}
 statehandler['IdleState'] = idle_handler
 statehandler['WaitState'] = wait_handler
 statehandler['GetState'] = get_handler 
+statehandler['PutState'] = put_handler
 
 sentmsg = None
 lastclient = None
@@ -130,9 +170,9 @@ while True:
     if not readready and not writeready and not error: 
         print("timeout")
         statemachine.on_event({'event':'timeout', 'msg':None})
-        lastclient,sentmsg=statehandler[statemachine.state.__str__()](server_socket,lastclient,sentmsg)
+        lastclient,sentmsg=statehandler[statemachine.getCurrentState()](server_socket,lastclient,sentmsg)
     for sock in readready: 
         msg, client = sock.recvfrom(100)
         msg = msg.decode()
         statemachine.on_event({'event':'msg_recv', 'msg':msg[:3]})
-        lastclient,sentmsg = statehandler[statemachine.state.__str__()](sock,client,msg)
+        lastclient,sentmsg = statehandler[statemachine.getCurrentState()](sock,client,msg)

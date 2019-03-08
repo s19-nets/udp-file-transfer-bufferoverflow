@@ -24,11 +24,11 @@ def process_get(sock, msg, sender_addr):
     msg_split = msg.split(":")
     openfile.write(msg_split[1]) 
     if msg_split[0] != "END":
-        if last_ackmsg == int(msg_split[0]):
+        if last_ackmsg == int(msg_split[1]):
             return
-        msgto_send = "ACK:s"+msg_split[0]
+        msgto_send = "ACK:s"+msg_split[1]
         sock.sendto(msgto_send.encode(),sender_addr)
-        last_ackmsg = int(msg_split[0])
+        last_ackmsg = int(msg_split[1])
         state = 'wait'
     else: 
         msgto_send = "BYE:Thank you"

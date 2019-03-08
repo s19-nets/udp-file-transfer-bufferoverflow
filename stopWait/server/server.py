@@ -65,7 +65,7 @@ def get_handler(sock, client, msg):
     segnum = int(msg) + 1
     segment = filehelper.getsegment(segnum)
     if segment != -1: 
-        segment = str(segnum) + ":" + segment.decode()
+        segment = "DAT:" + str(segnum) + ":" + segment.decode()
     else: 
         segment = str('END') + ":" + " "
     print("Send: %s"%segment)

@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 from serverstatemachine import ServerStateMachine
+from filehelper import FileHelper
 
 import os,re
 import sys,time 
@@ -8,8 +9,8 @@ from socket import *
 from select import select
 
 #uncomment the line below if you want to use the proxy
-#server_addr = ("", 50001) 
-server_addr = ("", 50000)
+server_addr = ("", 50001) 
+#server_addr = ("", 50000)
 
 def usage(): 
     print("Usage %s: [--serverport <port>]" % sys.argv[0])
@@ -98,38 +99,6 @@ def put_handler(sock, client, msg):
 
 # TODO: add a state where if an error happens that state machine 
 #       cant handle, the error state will log that error
-
-class FileHelper(object):
-    def __init__(self):
-        self.filename = None
-        self.splitedfile = {}
-        
-    def setfile(self,filename):
-        self.filename = filename
-
-    def splitfile(self): 
-        f = open(self.filename, "rb")
-        index = 1
-        data = f.read(100)
-        while data: 
-            self.splitedfile[index] = data
-            data = f.read(100)
-            index += 1
-
-    def getsegment(self, segnum): 
-        return self.splitedfile[segnum] if segnum in self.splitedfile else -1
-
-    def fileexists(self, filename): 
-        return os.path.isfile(filename)
-
-    def writetofile(self, data):
-        f = open(self.filename, "a")
-        f.write(data)
-        f.close()
-
-    def reset(self): 
-        self.filename = None
-        self.splitedfile = {}
 
 filehelper = FileHelper()
 

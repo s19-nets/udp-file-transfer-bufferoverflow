@@ -21,20 +21,21 @@ class WaitState(State):
             else return self
 
         elif event['event'] == 'err_to':
-            return IdleState()
+            return H()
         else:
             return self
 
 class GetState(State):
     def on_event(self,event):
-        if event['event'] == 'msg_send'
-        return WaitState()
-    return self
+        if event['event'] == 'msg_send':
+            return WaitState()
+        return self
 
 class PutState():
     def on_event(self,event):
-        if event['event'] == 'ACK'
-        return WaitState()
-    return self
+        if event['event'] == 'ACK':
+            return WaitState()
+        return self
 
-
+class H():
+    return None

@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+from client_states import IdleState
 ''' This class should also be techically the same as serverstatemachine'''
 class ClientStateMachine(object): 
     def __init__(self): 

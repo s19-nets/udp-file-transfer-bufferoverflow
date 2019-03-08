@@ -28,3 +28,5 @@ stopWait/server/__pycache__/
 *.swp
 *.swn
 *.swo
+
+*.pyc

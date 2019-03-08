@@ -4,7 +4,7 @@ from cstate import State
 #TODO: update each state to the next state based on the event that has occured
 class IdleState(State):
     def on_event(self,event):
-        if event['event'] == 'msg_recv':
+        if event['event'] == 'usr_inp':
             if event['msg'] == "GET":
                 return GetState()
             else:
@@ -15,15 +15,10 @@ class WaitState(State):
     def on_event(self,event):
         if event['event'] == 'msg_recv':
             if event['msg'] == "ACK":
-                return GetState()
-            elif event['msg'] == 'msg_send':
                 return PutState()
-            else return self
-
-        elif event['event'] == 'err_to':
-            return H()
-        else:
-            return self
+            else:
+                return GetState()
+        return WaitState()
 
 class GetState(State):
     def on_event(self,event):
@@ -33,9 +28,7 @@ class GetState(State):
 
 class PutState():
     def on_event(self,event):
-        if event['event'] == 'ACK':
+        if event['event'] == 'msg_send':
             return WaitState()
         return self
 
-class H():
-    return None

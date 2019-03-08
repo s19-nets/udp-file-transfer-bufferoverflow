@@ -22,8 +22,8 @@ def process_get(sock, msg, sender_addr):
     global state, requestfile, last_ackmsg
     openfile = open("files/"+requestfile, "a")
     msg_split = msg.split(":")
-    openfile.write(msg_split[1]) 
     if msg_split[0] != "END":
+        openfile.write(msg_split[2])
         if last_ackmsg == int(msg_split[1]):
             return
         msgto_send = "ACK:s"+msg_split[1]

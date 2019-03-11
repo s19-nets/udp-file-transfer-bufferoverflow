@@ -4,7 +4,7 @@ from cstate import State
 #TODO: update each state to the next state based on the event that has occured
 class IdleState(State):
     def on_event(self,event):
-        if event['event'] == 'usr_inp':
+        if event['event'] == 'msg_sent':
             if event['msg'] == "GET":
                 return GetState()
             else:

@@ -50,11 +50,18 @@ def idle_handler(sock, server, msg):
     return action, server
 
 def get_handler(sock, server, msg):
-    global statemachine
+    global statemachine, filehelper
     # if msg is DAT save the payload in file
     # if msg is END send BYE
-    
-
+    sendmsg = None
+    if msg[:3] == "DAT": 
+        filehelper.writetofile(msg[4:])
+        sendmsg = "ACK:"+msg[4:]
+    else: 
+        sendmsg = "BYE:Thank you"
+    sock.sednto(sendmsg, server)
+    statemachine.on_event('event':'msg_send','msg':sendmsg[:3])
+    return sendmsg,server
 
 statemachine = ClientStateMachine()
 

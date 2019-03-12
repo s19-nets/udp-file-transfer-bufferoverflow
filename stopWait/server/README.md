@@ -12,7 +12,7 @@ Simple server that sends files to client and saves files from the client
 
 ### Running server
 ```
-python3 server.py
+python3 server.py [Optional: --serverport <server address>:<port>]
 ```
 The servers happy state is its "idle."
 The server will run for ever waiting for clients to connect. 

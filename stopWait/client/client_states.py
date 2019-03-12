@@ -22,13 +22,21 @@ class WaitState(State):
 
 class GetState(State):
     def on_event(self,event):
-        if event['event'] == 'msg_send':
+        if event['event'] == 'msg_sent':
+            if event['msg'] == 'ACK': 
+                return WaitState()
+            else: 
+                return HappyState()
+        return self
+
+class PutState(State):
+    def on_event(self,event):
+        if event['event'] == 'msg_sent':
             return WaitState()
         return self
 
-class PutState():
+
+class HappyState(State): 
     def on_event(self,event):
-        if event['event'] == 'msg_send':
-            return WaitState()
         return self
 

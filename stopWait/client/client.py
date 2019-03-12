@@ -42,26 +42,44 @@ server_addr = ('localhost', 50000)
 def idle_handler(sock, server, msg):
     global statemachine, filehelper
     # Get user input and send its action to server
-    action = input("What would you like to do? GET or PUT a file? ex. GET:<filedir/filename>")
+    action = input("What would you like to do? GET or PUT a file? ex. GET:<filename>")
     # set our file in our filehelper object
-    filehelper.setfile(action[4:])
+    filehelper.setfile("files/"+action[4:])
     sock.sendto(action.encode(),server)
-    statemachine.on_event({'event':'msg_send','msg':action[:3]})
-    return action, server
+    statemachine.on_event({'event':'msg_sent','msg':action[:3]})
+    return (action, server)
 
 def get_handler(sock, server, msg):
     global statemachine, filehelper
     # if msg is DAT save the payload in file
     # if msg is END send BYE
     sendmsg = None
-    if msg[:3] == "DAT": 
-        filehelper.writetofile(msg[4:])
-        sendmsg = "ACK:"+msg[4:]
+    msg = msg.split(":")
+    if msg[0] == "DAT": 
+        filehelper.writetofile(msg[2])
+        sendmsg = "ACK:"+msg[1]
     else: 
         sendmsg = "BYE:Thank you"
-    sock.sednto(sendmsg, server)
-    statemachine.on_event('event':'msg_send','msg':sendmsg[:3])
-    return sendmsg,server
+    sock.sendto(sendmsg.encode(), server)
+    statemachine.on_event({'event':'msg_sent','msg':sendmsg[:3]})
+    return (sendmsg,server)
+
+def wait_handler(sock, server, msg):
+    global statemachine,tries
+    tries += 1
+
+    if tries == 5: 
+        # we will resend message since a timeout happened
+        print("Must of lost connection with server")
+    if server != None and msg != None: 
+        sock.sendto(msg.encode(),server)
+        statemachine.on_event({'event':'msg_sent','msg':msg[:3]})
+    else: 
+        print("Waiting on server")
+    return (msg,server)
+
+def happy_handler(sock,server,msg):
+    return ("Done",None)
 
 statemachine = ClientStateMachine()
 
@@ -73,16 +91,19 @@ error_set = set([client_socket])
 timeout = 5
 
 statehandler = {}
-#statehandler['IdleState'] = idle_handler
+statehandler['IdleState'] = idle_handler
 statehandler['WaitState'] = wait_handler
 statehandler['GetState'] = get_handler
 #statehandler['PutHandler'] = put_handler
+statehandler['HappyState'] = happy_handler
 
 filehelper = FileHelper()
 
 sentmsg = None
 server = None
 #state = 'idle'
+
+tries = 0
 
 requestfile = "foo.txt"
 last_ackmsg = 0
@@ -94,7 +115,9 @@ while True:
 
     if not readready and not writeready and not error:
         statemachine.on_event({'event':'timeout', 'msg':sentmsg})
-        sentmsg,server = statehandler[statemachine.getCurrentState()](client_socket, server_addr, sentmsg)
+        sentmsg, server = statehandler[statemachine.getCurrentState()](client_socket, server_addr, sentmsg)
+        if sentmsg == "Done" and server == None: 
+            break
         #if state == 'idle' and not getsent:
         #    open("files/"+requestfile, "w+") # create file
         #    msgto_send = "GET:" + requestfile
@@ -110,7 +133,7 @@ while True:
     for sock in readready: 
         recvmsg, server = sock.recvfrom(100)
         recvmsg = recvmsg.decode()
-        statemachien.on_event({'event':'msg_recv', 'msg':recvmsg})
+        statemachine.on_event({'event':'msg_recv', 'msg':recvmsg})
         server, sentmsg = statehandler[statemachine.getCurrentState()](sock,server,recvmsg)
 
 client_socket.close()

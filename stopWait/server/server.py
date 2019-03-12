@@ -9,8 +9,8 @@ from socket import *
 from select import select
 
 #uncomment the line below if you want to use the proxy
-server_addr = ("", 50001) 
-#server_addr = ("", 50000)
+#server_addr = ("", 50001) 
+server_addr = ("", 50000)
 
 def usage(): 
     print("Usage %s: [--serverport <port>]" % sys.argv[0])
@@ -61,7 +61,7 @@ def get_handler(sock, client, msg):
         msg = 0
     else: 
         # set up message to just contain the segment number that was ACK
-        msg = msg[5:]
+        msg = msg[4:]
 
     segnum = int(msg) + 1
     segment = filehelper.getsegment(segnum)

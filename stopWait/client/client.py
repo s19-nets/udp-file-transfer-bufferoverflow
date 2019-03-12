@@ -7,6 +7,7 @@ from socket import *
 from select import select 
 
 from clientstatemachine import ClientStateMachine
+from filehelper import FileHelper
 
 server_addr = ('localhost', 50000)
 
@@ -39,10 +40,11 @@ server_addr = ('localhost', 50000)
 #    return msgto_send
 
 def idle_handler(sock, server, msg):
-    global statemachine
+    global statemachine, filehelper
     # Get user input and send its action to server
     action = input("What would you like to do? GET or PUT a file? ex. GET:<filedir/filename>")
-    # TODO: implement file helper to not have global variables for file
+    # set our file in our filehelper object
+    filehelper.setfile(action[4:])
     sock.sendto(action.encode(),server)
     statemachine.on_event({'event':'msg_send','msg':action[:3]})
     return action, server
@@ -69,6 +71,7 @@ statehandler['WaitState'] = wait_handler
 statehandler['GetState'] = get_handler
 #statehandler['PutHandler'] = put_handler
 
+filehelper = FileHelper()
 
 sentmsg = None
 server = None
